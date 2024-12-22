@@ -11,7 +11,7 @@ local function getAllSoundIds()
 end
 
 local soundIds, soundNames = getAllSoundIds()
-local timeInterval = 7
+local timeInterval = 3.5
 local playedSounds = {}
 
 -- Interface GUI
@@ -118,7 +118,7 @@ local function playRandomSound()
         playedSounds[soundId] = true
 
         -- Para o som após 7 segundos
-        delay(7, function()
+        delay(3.5, function()
             sound:Stop()
         end)
     end
