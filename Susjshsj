@@ -1,0 +1,134 @@
+local function getAllSoundIds()
+    local soundIds = {}
+    local soundNames = {}
+    for _, sound in pairs(game:GetDescendants()) do
+        if sound:IsA("Sound") then
+            table.insert(soundIds, sound.SoundId)
+            table.insert(soundNames, sound.Name)
+        end
+    end
+    return soundIds, soundNames
+end
+
+local soundIds, soundNames = getAllSoundIds()
+local timeInterval = 7
+local playedSounds = {}
+
+-- Interface GUI
+local gui = Instance.new("ScreenGui")
+gui.Parent = game:GetService("CoreGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 400)
+frame.Position = UDim2.new(0.5, -150, 0.5, -200)  -- Meio da tela
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Cor preta
+frame.BorderSizePixel = 1
+frame.BorderColor3 = Color3.fromRGB(255, 255, 255)  -- Borda branca
+frame.BorderMode = Enum.BorderMode.Outline
+frame.Active = true
+frame.Draggable = true  -- Permite arrastar a interface
+frame.Parent = gui
+
+-- Efeito de neon na borda
+local neonEffect = Instance.new("UIStroke")
+neonEffect.Parent = frame
+neonEffect.Thickness = 1
+neonEffect.Color = Color3.fromRGB(255, 255, 255)
+neonEffect.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- Título
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 50)
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 1, 0)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Lista de Sons"
+titleLabel.TextColor3 = Color3.new(1, 1, 1)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 24
+titleLabel.Parent = titleBar
+
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Size = UDim2.new(1, 0, 1, -50)  -- Ajuste para não cobrir o título
+scrollingFrame.Position = UDim2.new(0, 0, 0, 50)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)  -- Inicia com CanvasSize zero
+scrollingFrame.ScrollBarThickness = 10
+scrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+scrollingFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 70)  -- Cor cinza-escuro
+scrollingFrame.Parent = frame
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = scrollingFrame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+local function createSoundButton(soundName, soundId)
+    local buttonFrame = Instance.new("Frame")
+    buttonFrame.Size = UDim2.new(1, 0, 0, 30)
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Cor preta
+    buttonFrame.BorderSizePixel = 0
+    buttonFrame.Parent = scrollingFrame
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(0.5, 0, 1, 0)
+    textLabel.Position = UDim2.new(0, 0, 0, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = soundName .. ": " .. soundId
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.Parent = buttonFrame
+
+    local copyButton = Instance.new("TextButton")
+    copyButton.Size = UDim2.new(0.5, 0, 1, 0)
+    copyButton.Position = UDim2.new(0.5, 0, 0, 0)
+    copyButton.Text = "Copiar"
+    copyButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    copyButton.TextColor3 = Color3.new(1, 1, 1)
+    copyButton.Parent = buttonFrame
+
+    copyButton.MouseButton1Click:Connect(function()
+        setclipboard(soundId)  -- Função para copiar o texto
+    end)
+
+    -- Atualiza o CanvasSize do ScrollingFrame para acomodar o novo botão
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, scrollingFrame.CanvasSize.Y.Offset + 30)
+end
+
+local function playRandomSound()
+    if #soundIds > 0 then
+        local soundId
+        local soundName
+        repeat
+            local index = math.random(#soundIds)
+            soundId = soundIds[index]
+            soundName = soundNames[index]
+        until not playedSounds[soundId]
+
+        local sound = Instance.new("Sound")
+        sound.SoundId = soundId
+        sound.Volume = math.random(1, 10)
+        sound.Parent = workspace
+        sound:Play()
+
+        createSoundButton(soundName, soundId)
+        playedSounds[soundId] = true
+
+        -- Para o som após 7 segundos
+        delay(7, function()
+            sound:Stop()
+        end)
+    end
+end
+
+while true do
+    if #playedSounds < #soundIds then
+        playRandomSound()
+        wait(timeInterval)
+    else
+        break
+    end
+end
