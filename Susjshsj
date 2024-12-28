@@ -1,40 +1,17 @@
-local function getAllSoundIds()
-    local soundIds = {}
-    local soundNames = {}
-    for _, sound in pairs(game:GetDescendants()) do
-        if sound:IsA("Sound") then
-            table.insert(soundIds, sound.SoundId)
-            table.insert(soundNames, sound.Name)
-        end
-    end
-    return soundIds, soundNames
-end
-
-local soundIds, soundNames = getAllSoundIds()
-local timeInterval = 3.5
-local playedSounds = {}
+local player = game.Players.LocalPlayer
 
 -- Interface GUI
 local gui = Instance.new("ScreenGui")
-gui.Parent = game:GetService("CoreGui")
+gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 300, 0, 400)
 frame.Position = UDim2.new(0.5, -150, 0.5, -200)  -- Meio da tela
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Cor preta
-frame.BorderSizePixel = 1
-frame.BorderColor3 = Color3.fromRGB(255, 255, 255)  -- Borda branca
-frame.BorderMode = Enum.BorderMode.Outline
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.BorderSizePixel = 0
 frame.Active = true
-frame.Draggable = true  -- Permite arrastar a interface
+frame.Draggable = true  -- Permitir arrastar a interface inteira
 frame.Parent = gui
-
--- Efeito de neon na borda
-local neonEffect = Instance.new("UIStroke")
-neonEffect.Parent = frame
-neonEffect.Thickness = 1
-neonEffect.Color = Color3.fromRGB(255, 255, 255)
-neonEffect.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
 -- Título
 local titleBar = Instance.new("Frame")
@@ -48,7 +25,7 @@ local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 1, 0)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Lista de Sons"
+titleLabel.Text = "Lista de Imagens"
 titleLabel.TextColor3 = Color3.new(1, 1, 1)
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.TextSize = 24
@@ -57,78 +34,71 @@ titleLabel.Parent = titleBar
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, 0, 1, -50)  -- Ajuste para não cobrir o título
 scrollingFrame.Position = UDim2.new(0, 0, 0, 50)
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)  -- Inicia com CanvasSize zero
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 scrollingFrame.ScrollBarThickness = 10
 scrollingFrame.ScrollingDirection = Enum.ScrollingDirection.Y
-scrollingFrame.BackgroundColor3 = Color3.fromRGB(70, 70, 70)  -- Cor cinza-escuro
+scrollingFrame.BackgroundTransparency = 1
 scrollingFrame.Parent = frame
 
 local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = scrollingFrame
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-local function createSoundButton(soundName, soundId)
+-- Função para obter todas as imagens
+local function getAllImages()
+    local images = {}
+    for _, image in pairs(game:GetDescendants()) do
+        if image:IsA("ImageLabel") or image:IsA("ImageButton") then
+            table.insert(images, {Name = image.Name, Id = image.Image})
+        end
+    end
+    return images
+end
+
+local images = getAllImages()
+
+local function createImageButton(image)
     local buttonFrame = Instance.new("Frame")
-    buttonFrame.Size = UDim2.new(1, 0, 0, 30)
-    buttonFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)  -- Cor preta
+    buttonFrame.Size = UDim2.new(1, 0, 0, 100)  -- Aumentei o tamanho para futurista
+    buttonFrame.BackgroundTransparency = 0.5
+    buttonFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     buttonFrame.BorderSizePixel = 0
     buttonFrame.Parent = scrollingFrame
 
     local textLabel = Instance.new("TextLabel")
-    textLabel.Size = UDim2.new(0.5, 0, 1, 0)
-    textLabel.Position = UDim2.new(0, 0, 0, 0)
+    textLabel.Size = UDim2.new(0.6, -10, 1, 0)
+    textLabel.Position = UDim2.new(0, 10, 0, 0)
     textLabel.BackgroundTransparency = 1
-    textLabel.Text = soundName .. ": " .. soundId
+    textLabel.Text = image.Name
     textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextSize = 18
     textLabel.Parent = buttonFrame
 
+    local imageLabel = Instance.new("ImageLabel")
+    imageLabel.Size = UDim2.new(0.3, 0, 0.8, 0)
+    imageLabel.Position = UDim2.new(0.65, 0, 0.1, 0)
+    imageLabel.BackgroundTransparency = 1
+    imageLabel.Image = image.Id
+    imageLabel.Parent = buttonFrame
+
     local copyButton = Instance.new("TextButton")
-    copyButton.Size = UDim2.new(0.5, 0, 1, 0)
-    copyButton.Position = UDim2.new(0.5, 0, 0, 0)
+    copyButton.Size = UDim2.new(0.2, -10, 0.5, -10)
+    copyButton.Position = UDim2.new(0.8, 0, 0.25, 0)
     copyButton.Text = "Copiar"
-    copyButton.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+    copyButton.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
     copyButton.TextColor3 = Color3.new(1, 1, 1)
+    copyButton.Font = Enum.Font.SourceSans
+    copyButton.TextSize = 18
     copyButton.Parent = buttonFrame
 
     copyButton.MouseButton1Click:Connect(function()
-        setclipboard(soundId)  -- Função para copiar o texto
+        setclipboard(image.Id)  -- Função para copiar o ID da imagem
     end)
 
-    -- Atualiza o CanvasSize do ScrollingFrame para acomodar o novo botão
-    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, scrollingFrame.CanvasSize.Y.Offset + 30)
+    scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, scrollingFrame.CanvasSize.Y.Offset + 100)  -- Atualiza o tamanho da tela
 end
 
-local function playRandomSound()
-    if #soundIds > 0 then
-        local soundId
-        local soundName
-        repeat
-            local index = math.random(#soundIds)
-            soundId = soundIds[index]
-            soundName = soundNames[index]
-        until not playedSounds[soundId]
-
-        local sound = Instance.new("Sound")
-        sound.SoundId = soundId
-        sound.Volume = math.random(1, 10)
-        sound.Parent = workspace
-        sound:Play()
-
-        createSoundButton(soundName, soundId)
-        playedSounds[soundId] = true
-
-        -- Para o som após 7 segundos
-        delay(3.5, function()
-            sound:Stop()
-        end)
-    end
-end
-
-while true do
-    if #playedSounds < #soundIds then
-        playRandomSound()
-        wait(timeInterval)
-    else
-        break
-    end
+for _, image in ipairs(images) do
+    createImageButton(image)
 end
