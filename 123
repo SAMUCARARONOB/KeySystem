@@ -1,1 +1,245 @@
-{"ABC", "ABC"},
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua"))()
+local Window = Rayfield:CreateWindow({
+    Name = "VEHICLE LEGENDS",
+    LoadingTitle = "Carregando",
+    LoadingSubtitle = "OP-SCRIPTS",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = nil,
+        FileName = "Vehicle Legends"
+    },
+    KeySystem = false,
+    KeySettings = {
+        Title = "Vehicle Legends",
+        Subtitle = "Sistema de Chaves",
+        Note = "Nenhuma chave necessária",
+        FileName = "Chave",
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = ""
+    }
+})
+
+local Tab1 = Window:CreateTab("Voo", 4483362458)
+
+local coords = {
+    {-1297.74, 22.91, 1036.70},
+    {-1160.88, 22.90, 1203.11},
+    {-909.21, 22.89, 1262.23},
+    {-842.73, 22.87, 1064.62},
+    {-780.42, 22.90, 762.31},
+    {-651.34, 22.89, 812.03},
+    {-627.62, 22.86, 1079.79},
+    {-514.47, 22.85, 1260.10},
+    {-483.42, 23.22, 1063.58},
+    {-651.76, 49.93, 614.39},
+    {-785.91, 24.52, 255.90},
+    {-741.76, 22.92, 89.73},
+    {-413.75, 22.88, 180.23},
+    {-320.64, 22.81, 393.12},
+    {-501.58, 22.89, 257.68},
+    {-711.85, 16.83, 208.93},
+    {-656.21, 22.90, 383.99},
+    {-457.79, 22.88, 557.85},
+    {-568.11, 22.88, 691.15},
+    {-816.36, 22.91, 551.64},
+    {-1024.96, 22.92, 563.12},
+    {-1231.84, 16.89, 804.36}
+}
+
+local firstCoord = Vector3.new(-173.98, 25.80, -750.92)
+local flying = false
+local flyIndex = 1
+local teleportCount = 0
+local reachedFirstCoord = false
+local lastCoordCount = 0
+local flyToFirstCoord = false
+local flyToggleActivated = false -- Variável para verificar se o toggle está ativado
+local speedMultiplier = 1 -- Multiplicador de velocidade inicial
+local carSpeedMultiplier = 1 -- Multiplicador de velocidade do carro inicial
+
+local function flyToCoord(targetCoord)
+    local character = game.Players.LocalPlayer.Character
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if rootPart then
+        local bodyPosition = Instance.new("BodyPosition", rootPart)
+        bodyPosition.MaxForce = Vector3.new(100000, 100000, 100000)
+        bodyPosition.P = 10000
+        
+        local bodyGyro = Instance.new("BodyGyro", rootPart)
+        bodyGyro.MaxTorque = Vector3.new(100000, 100000, 100000)
+        bodyGyro.P = 10000
+        
+        while flying do
+            bodyPosition.Position = targetCoord
+            bodyGyro.CFrame = CFrame.new(targetCoord)
+            
+            if (rootPart.Position - targetCoord).magnitude < 1 then
+                flying = false
+                if targetCoord == firstCoord then
+                    reachedFirstCoord = true
+                end
+            end
+            
+            wait(0.1)
+        end
+        
+        bodyPosition:Destroy()
+        bodyGyro:Destroy()
+    end
+end
+
+local function flyToCoords()
+    local character = game.Players.LocalPlayer.Character
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if rootPart then
+        local bodyPosition = Instance.new("BodyPosition", rootPart)
+        bodyPosition.MaxForce = Vector3.new(100000, 100000, 100000)
+        bodyPosition.P = 10000
+        
+        local bodyGyro = Instance.new("BodyGyro", rootPart)
+        bodyGyro.MaxTorque = Vector3.new(100000, 100000, 100000)
+        bodyGyro.P = 10000
+        
+        while flying do
+            local coord = Vector3.new(coords[flyIndex][1], coords[flyIndex][2], coords[flyIndex][3])
+            bodyPosition.Position = coord
+            bodyGyro.CFrame = CFrame.new(coord)
+            
+            if (rootPart.Position - coord).magnitude < 120 then
+                flyIndex = (flyIndex % #coords) + 1
+                
+                if flyIndex == 1 then
+                    lastCoordCount = lastCoordCount + 1
+                    if lastCoordCount >= 2 then
+                        flying = false
+                        flyToFirstCoord = true
+                        lastCoordCount = 0 -- reset the count after flying to the first coordinate
+                    end
+                end
+            end
+            
+            wait(0.1)
+        end
+        
+        bodyPosition:Destroy()
+        bodyGyro:Destroy()
+    end
+end
+
+local function detectTeleport()
+    local lastPositions = {}
+    local maxSpeed = 9999
+
+    while true do
+        if not flyToggleActivated then
+            wait(0.1)
+            continue
+        end
+        
+        local character = game.Players.LocalPlayer.Character
+        local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+        
+        if rootPart then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    local lastPosition = lastPositions[part] or part.Position
+                    local distance = (lastPosition - part.Position).magnitude
+                    local speed = distance / 0.1 -- Assume 0.1 seconds as the wait time between checks
+
+                    if speed > maxSpeed then
+                        return true
+                    end
+
+                    lastPositions[part] = part.Position
+                end
+            end
+        end
+        
+        wait(0.1)
+    end
+end
+
+local function onTeleport()
+    flying = false -- Desativa o voo da coordenada inicial
+    flying = true
+    flyToCoords()
+end
+
+local function adjustCarSpeed(multiplier)
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") and part.Parent == character then
+                part.Velocity = part.Velocity * multiplier
+            end
+        end
+    end
+end
+
+Tab1:CreateToggle({
+    Name = "FARM RACE",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = function(value)
+        flying = value
+        flyToggleActivated = value -- Atualiza o estado do toggle
+        if flying then
+            flyToCoord(firstCoord)
+        end
+    end
+})
+
+Tab1:CreateToggle({
+    Name = "Multiplicador de Velocidade",
+    CurrentValue = false,
+    Flag = "SpeedMultiplierToggle",
+    Callback = function(value)
+        if value then
+            speedMultiplier = 10
+        else
+            speedMultiplier = 1
+        end
+        local character = game.Players.LocalPlayer.Character
+        local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = humanoid.WalkSpeed * speedMultiplier
+            humanoid.JumpPower = humanoid.JumpPower * speedMultiplier
+        end
+    end
+})
+
+Tab1:CreateToggle({
+    Name = "Multiplicador de Velocidade do Carro",
+    CurrentValue = false,
+    Flag = "CarSpeedMultiplierToggle",
+    Callback = function(value)
+        if value then
+            carSpeedMultiplier = 3000
+        else
+            carSpeedMultiplier = 1
+        end
+        adjustCarSpeed(carSpeedMultiplier)
+    end
+})
+
+Rayfield:LoadConfiguration()
+
+print("Script de Voo carregado com sucesso!")
+
+-- Começa a detecção de teleporte em segundo plano
+spawn(function()
+    while true do
+        if detectTeleport() then
+            onTeleport()
+        end
+        
+        if flyToFirstCoord then
+            flyToFirstCoord = false
+            flying = true
+            flyToCoord(firstCoord)
+        end
+    end
+end)
